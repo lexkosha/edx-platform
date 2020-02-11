@@ -64,7 +64,7 @@ from openedx.core.djangoapps.credit.api import get_credit_requirements, is_credi
 from openedx.core.djangoapps.credit.tasks import update_credit_course_requirements
 from openedx.core.djangoapps.models.course_details import CourseDetails
 from openedx.core.djangoapps.site_configuration import helpers as configuration_helpers
-from openedx.core.djangoapps.waffle_utils import WaffleSwitchNamespace
+from openedx.core.djangoapps.waffle_utils import WaffleSwitch, WaffleSwitchNamespace
 from openedx.core.djangolib.js_utils import dump_js_escaped_json
 from openedx.core.lib.course_tabs import CourseTabPluginManager
 from openedx.core.lib.courses import course_image_url
@@ -72,6 +72,7 @@ from openedx.features.content_type_gating.models import ContentTypeGatingConfig
 from openedx.features.content_type_gating.partitions import CONTENT_TYPE_GATING_SCHEME
 from openedx.features.course_experience.waffle import ENABLE_COURSE_ABOUT_SIDEBAR_HTML
 from openedx.features.course_experience.waffle import waffle as course_experience_waffle
+from contentstore.config.waffle import WAFFLE_NAMESPACE as STUDIO_WAFFLE_NAMESPACE
 from student import auth
 from student.auth import has_course_author_access, has_studio_read_access, has_studio_write_access
 from student.roles import CourseCreatorRole, CourseInstructorRole, CourseStaffRole, GlobalStaff, UserBasedRole
@@ -102,6 +103,8 @@ from .item import create_xblock_info
 from .library import LIBRARIES_ENABLED, get_library_creator_status
 
 log = logging.getLogger(__name__)
+
+MOBILE_COURSE_AVAILABLE_UI = WaffleSwitch(STUDIO_WAFFLE_NAMESPACE, 'mobile_course_available_enable')
 
 __all__ = ['course_info_handler', 'course_handler', 'course_listing',
            'course_info_update_handler', 'course_search_index_handler',
@@ -1312,6 +1315,11 @@ def advanced_settings_handler(request, course_key_string):
     course_key = CourseKey.from_string(course_key_string)
     with modulestore().bulk_operations(course_key):
         course_module = get_course_and_check_access(course_key, request.user)
+
+        advanced_dict = CourseMetadata.fetch(course_module)
+        if MOBILE_COURSE_AVAILABLE_UI.is_enabled():
+            advanced_dict.get('mobile_available')['deprecated'] = True
+
         if 'text/html' in request.META.get('HTTP_ACCEPT', '') and request.method == 'GET':
             publisher_enabled = configuration_helpers.get_value_for_org(
                 course_module.location.org,
@@ -1321,7 +1329,7 @@ def advanced_settings_handler(request, course_key_string):
 
             return render_to_response('settings_advanced.html', {
                 'context_course': course_module,
-                'advanced_dict': CourseMetadata.fetch(course_module),
+                'advanced_dict': advanced_dict,
                 'advanced_settings_url': reverse_course_url('advanced_settings_handler', course_key),
                 'publisher_enabled': publisher_enabled,
 

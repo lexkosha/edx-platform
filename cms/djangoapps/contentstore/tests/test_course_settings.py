@@ -21,6 +21,7 @@ from mock import Mock, patch
 from pytz import UTC
 
 from contentstore.config.waffle import ENABLE_PROCTORING_PROVIDER_OVERRIDES
+from contentstore.views.course import MOBILE_COURSE_AVAILABLE_UI
 from contentstore.utils import reverse_course_url, reverse_usage_url
 from course_modes.models import CourseMode
 from models.settings.course_grading import GRADING_POLICY_CHANGED_EVENT_TYPE, CourseGradingModel, hash_grading_policy
@@ -90,6 +91,31 @@ class CourseSettingsEncoderTest(CourseTestCase):
         self.assertEqual(1, jsondetails['number'])
         self.assertEqual(jsondetails['string'], 'string')
 
+class CourseAdvanceSettingViewTest(CourseTestCase, MilestonesTestCaseMixin):
+    """
+    Tests for AdvanceSettings View.
+    """
+
+    def setUp(self):
+        super(CourseAdvanceSettingViewTest, self).setUp()
+        self.fullcourse = CourseFactory.create()
+        self.course_setting_url = get_url(self.course.id, 'advanced_settings_handler')
+
+    def test_mobile_field_available(self):
+
+        """
+        Test to check if Mobile Course Available flag is not viewable when
+        waffle switch is active.
+        """
+
+        with MOBILE_COURSE_AVAILABLE_UI.override(active=True):
+            response = self.client.get_html(self.course_setting_url)
+            start = response.content.decode('utf-8').find("mobile_available")
+            end = response.content.decode('utf-8').find("}", start)
+            settings_fields = json.loads(response.content.decode('utf-8')[start + len("mobile_available: "):end + 1])
+
+            self.assertEqual(settings_fields["display_name"], "Mobile Course Available")
+            self.assertEqual(settings_fields["deprecated"], True)
 
 @ddt.ddt
 class CourseDetailsViewTest(CourseTestCase, MilestonesTestCaseMixin):

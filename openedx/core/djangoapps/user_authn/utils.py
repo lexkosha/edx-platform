@@ -17,17 +17,15 @@ def is_safe_login_or_logout_redirect_request(request, redirect_to):
     Determine if the given redirect URL/path is safe for redirection.
 
     This is a wrapper function for backwards compatibility.
-    Prefer to use `is_safe_login_or_logout_redirect`.
+    It only works with GET requetss.
+    Prefer `is_safe_login_or_logout_redirect` instead.
     """
     return is_safe_login_or_logout_redirect(
-        request.get_host(),
-        request.GET.get('client_id'),
-        request.is_secure(),
-        redirect_to,
+        request.get_host(), request.GET, request.is_secure(), redirect_to
     )
 
 
-def is_safe_login_or_logout_redirect(request_host, dot_client_id, require_https, redirect_to):
+def is_safe_login_or_logout_redirect(request_host, request_params, require_https, redirect_to):
     """
     Determine if the given redirect URL/path is safe for redirection.
     """
@@ -35,6 +33,7 @@ def is_safe_login_or_logout_redirect(request_host, dot_client_id, require_https,
     login_redirect_whitelist.add(request_host)
 
     # Allow OAuth2 clients to redirect back to their site after logout.
+    dot_client_id = request_params.get('client_id')
     if dot_client_id:
         application = Application.objects.get(client_id=dot_client_id)
         if redirect_to in application.redirect_uris:

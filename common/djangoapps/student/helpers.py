@@ -35,7 +35,7 @@ from openedx.core.djangoapps.certificates.api import certificates_viewable_for_c
 from openedx.core.djangoapps.site_configuration import helpers as configuration_helpers
 from openedx.core.djangoapps.theming import helpers as theming_helpers
 from openedx.core.djangoapps.theming.helpers import get_themes
-from openedx.core.djangoapps.user_authn.utils import is_safe_login_or_logout_redirect_request
+from openedx.core.djangoapps.user_authn.utils import is_safe_login_or_logout_redirect
 from student.models import (
     CourseEnrollment,
     LinkedInAddToProfileConfiguration,
@@ -234,21 +234,29 @@ def get_next_url_for_login_page(request):
     /account/finish_auth/ view following login, which will take care of auto-enrollment in
     the specified course.
 
-    Otherwise, we go to the ?next= query param or to the dashboard if nothing else is
+    Otherwise, we go to the `next` param or to the dashboard if nothing else is
     specified.
 
     If THIRD_PARTY_AUTH_HINT is set, then `tpa_hint=<hint>` is added as a query parameter.
+
+    This works with both GET and POST requests.
     """
-    redirect_to = _get_redirect_to(request)
+    request_host = request.get_host()
+    request_headers = request.META
+    request_params = request.GET if request.method == 'GET' else request.POST
+    require_https = request.is_secure()
+    redirect_to = _get_redirect_to(
+        request_host, request_headers, request_params, require_https
+    )
     if not redirect_to:
         try:
             redirect_to = reverse('dashboard')
         except NoReverseMatch:
             redirect_to = reverse('home')
 
-    if any(param in request.GET for param in POST_AUTH_PARAMS):
+    if any(param in request_params for param in POST_AUTH_PARAMS):
         # Before we redirect to next/dashboard, we need to handle auto-enrollment:
-        params = [(param, request.GET[param]) for param in POST_AUTH_PARAMS if param in request.GET]
+        params = [(param, request_params[param]) for param in POST_AUTH_PARAMS if param in request_params]
         params.append(('next', redirect_to))  # After auto-enrollment, user will be sent to payment page or to this URL
         redirect_to = '{}?{}'.format(reverse('finish_auth'), six.moves.urllib.parse.urlencode(params))
         # Note: if we are resuming a third party auth pipeline, then the next URL will already
@@ -274,16 +282,21 @@ def get_next_url_for_login_page(request):
     return redirect_to
 
 
-def _get_redirect_to(request):
+def _get_redirect_to(request_host, request_headers, request_params, require_https):
     """
     Determine the redirect url and return if safe
-    :argument
-        request: request object
 
-    :returns: redirect url if safe else None
+    Arguments:
+        request_host (str)
+        request_headers (dict)
+        request_params (QueryDict)
+        require_https (bool)
+
+    Returns: str
+        redirect url if safe else None
     """
-    redirect_to = request.GET.get('next')
-    header_accept = request.META.get('HTTP_ACCEPT', '')
+    redirect_to = requets_params.get('next')
+    header_accept = request_headers.get('HTTP_ACCEPT', '')
 
     # If we get a redirect parameter, make sure it's safe i.e. not redirecting outside our domain.
     # Also make sure that it is not redirecting to a static asset and redirected page is web page
@@ -291,7 +304,10 @@ def _get_redirect_to(request):
     # get information about a user on edx.org. In any such case drop the parameter.
     if redirect_to:
         mime_type, _ = mimetypes.guess_type(redirect_to, strict=False)
-        if not is_safe_login_or_logout_redirect_request(request, redirect_to):
+        safe_redirect = is_safe_login_or_logout_redirect(
+            request_host, request_params, require_https, redirect_to
+        )
+        if not safe_redirect:
             log.warning(
                 u"Unsafe redirect parameter detected after login page: '%(redirect_to)s'",
                 {"redirect_to": redirect_to}
@@ -303,7 +319,7 @@ def _get_redirect_to(request):
                 u" after login page: '%(redirect_to)s'",
                 {
                     "redirect_to": redirect_to, "content_type": header_accept,
-                    "user_agent": request.META.get('HTTP_USER_AGENT', '')
+                    "user_agent": request_headers.get('HTTP_USER_AGENT', '')
                 }
             )
             redirect_to = None

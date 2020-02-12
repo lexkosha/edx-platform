@@ -297,6 +297,10 @@ def _get_redirect_to(request_host, request_headers, request_params, require_http
     """
     redirect_to = request_params.get('next')
     header_accept = request_headers.get('HTTP_ACCEPT', '')
+    accepts_text_html = any(
+        mime_type in header_accept
+        for mime_type in {'*/*', 'text/*', 'text/html'}
+    )
 
     # If we get a redirect parameter, make sure it's safe i.e. not redirecting outside our domain.
     # Also make sure that it is not redirecting to a static asset and redirected page is web page
@@ -316,7 +320,7 @@ def _get_redirect_to(request_host, request_headers, request_params, require_http
                 {"redirect_to": redirect_to}
             )
             redirect_to = None
-        elif 'text/html' not in header_accept:
+        elif not accepts_text_html:
             log.info(
                 u"Redirect to non html content '%(content_type)s' detected from '%(user_agent)s'"
                 u" after login page: '%(redirect_to)s'",

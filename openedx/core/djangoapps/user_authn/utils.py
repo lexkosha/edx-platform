@@ -21,7 +21,10 @@ def is_safe_login_or_logout_redirect_request(request, redirect_to):
     Prefer `is_safe_login_or_logout_redirect` instead.
     """
     return is_safe_login_or_logout_redirect(
-        request.get_host(), request.GET, request.is_secure(), redirect_to
+        request_host=request.get_host(),
+        request_params=request.GET,
+        require_https=request.is_secure(),
+        redirect_to=redirect_to,
     )
 
 

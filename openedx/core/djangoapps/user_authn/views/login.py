@@ -430,6 +430,8 @@ def login_user(request):
         if is_user_third_party_authenticated:
             running_pipeline = pipeline.get(request)
             redirect_url = pipeline.get_complete_url(backend_name=running_pipeline['backend'])
+        elif request.POST.get('next'):
+            redirect_url = get_next_url_for_login_page(request)
 
         response = JsonResponse({
             'success': True,

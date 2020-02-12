@@ -11,7 +11,7 @@ from six.moves.urllib.parse import urlencode  # pylint: disable=import-error
 
 from openedx.core.djangoapps.oauth_dispatch.tests.factories import ApplicationFactory
 from openedx.core.djangoapps.user_authn.utils import (
-    generate_password, is_safe_login_or_logout_redirect
+    generate_password, is_safe_login_or_logout_redirect_request
 )
 
 
@@ -44,7 +44,7 @@ class TestRedirectUtils(TestCase):
         """ Test safe next parameter """
         req = self.request.get('/login', HTTP_HOST=host)
         req.is_secure = lambda: req_is_secure
-        actual_is_safe = is_safe_login_or_logout_redirect(req, url)
+        actual_is_safe = is_safe_login_or_logout_redirect_request(req, url)
         self.assertEqual(actual_is_safe, expected_is_safe)
 
     @ddt.data(
@@ -60,7 +60,7 @@ class TestRedirectUtils(TestCase):
             'redirect_url': redirect_url,
         }
         req = self.request.get('/logout?{}'.format(urlencode(params)), HTTP_HOST=host)
-        actual_is_safe = is_safe_login_or_logout_redirect(req, redirect_url)
+        actual_is_safe = is_safe_login_or_logout_redirect_request(req, redirect_url)
         self.assertEqual(actual_is_safe, expected_is_safe)
 
 

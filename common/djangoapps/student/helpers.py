@@ -35,7 +35,7 @@ from openedx.core.djangoapps.certificates.api import certificates_viewable_for_c
 from openedx.core.djangoapps.site_configuration import helpers as configuration_helpers
 from openedx.core.djangoapps.theming import helpers as theming_helpers
 from openedx.core.djangoapps.theming.helpers import get_themes
-from openedx.core.djangoapps.user_authn.utils import is_safe_login_or_logout_redirect
+from openedx.core.djangoapps.user_authn.utils import is_safe_login_or_logout_redirect_request
 from student.models import (
     CourseEnrollment,
     LinkedInAddToProfileConfiguration,
@@ -291,7 +291,7 @@ def _get_redirect_to(request):
     # get information about a user on edx.org. In any such case drop the parameter.
     if redirect_to:
         mime_type, _ = mimetypes.guess_type(redirect_to, strict=False)
-        if not is_safe_login_or_logout_redirect(request, redirect_to):
+        if not is_safe_login_or_logout_redirect_request(request, redirect_to):
             log.warning(
                 u"Unsafe redirect parameter detected after login page: '%(redirect_to)s'",
                 {"redirect_to": redirect_to}

@@ -14,7 +14,7 @@ from provider.oauth2.models import Client
 from six.moves.urllib.parse import parse_qs, urlsplit, urlunsplit  # pylint: disable=import-error
 
 from openedx.core.djangoapps.user_authn.cookies import delete_logged_in_cookies
-from openedx.core.djangoapps.user_authn.utils import is_safe_login_or_logout_redirect
+from openedx.core.djangoapps.user_authn.utils import is_safe_login_or_logout_redirect_request
 from third_party_auth import pipeline as tpa_pipeline
 
 
@@ -61,7 +61,7 @@ class LogoutView(TemplateView):
         if target_url:
             target_url = parse.unquote(parse.quote_plus(target_url))
 
-        if target_url and is_safe_login_or_logout_redirect(self.request, target_url):
+        if target_url and is_safe_login_or_logout_redirect_request(self.request, target_url):
             return target_url
         else:
             return self.default_target

@@ -6,9 +6,9 @@ Helpers for the student app.
 import json
 import logging
 import mimetypes
+import urllib.parse
 from collections import OrderedDict
 from datetime import datetime
-import urllib.parse
 
 from completion.exceptions import UnavailableCompletionData
 from completion.utilities import get_key_to_last_completed_block

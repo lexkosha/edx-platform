@@ -72,6 +72,8 @@ from openedx.core.djangoapps.site_configuration import helpers as configuration_
         <a class="help-link" href="${configuration_helpers.get_value('SUPPORT_SITE_LINK', settings.SUPPORT_SITE_LINK)}" rel="noopener" target="_blank">${_("Help")}</a>
       % endif
     </div>
-    <%include file="user_dropdown.html"/>
+    % if not rendering_404:
+      <%include file="user_dropdown.html"/>
+    % endif
   </div>
 </div>

@@ -70,6 +70,8 @@ from openedx.core.djangoapps.site_configuration import helpers as configuration_
     <div class="mobile-nav-item hidden-mobile nav-item">
       <a class="help-link" href="${help_link}" rel="noopener" target="_blank">${_("Help")}</a>
     </div>
-    <%include file="user_dropdown.html"/>
+    % if not rendering_404:
+      <%include file="user_dropdown.html"/>
+    % endif
   </div>
 </div>

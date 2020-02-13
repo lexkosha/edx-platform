@@ -65,11 +65,13 @@ from django.utils.translation import ugettext as _
 
     <li class="nav-item mt-2 nav-item-open-collapsed">
       <a href="${get_online_help_info(online_help_token)['doc_url']}"
-      rel="noopener" 
+      rel="noopener"
       target="_blank"
        class="nav-link">${_("Help")}</a>
     </li>
 
-    <%include file="../../user_dropdown.html"/>
+    % if not rendering_404:
+      <%include file="../../user_dropdown.html"/>
+    % endif
   </ul>
 </div>

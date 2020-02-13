@@ -94,7 +94,7 @@ def render_press_release(request, slug):
 
 @fix_crum_request
 def render_404(request, exception):
-    return HttpResponseNotFound(render_to_string('static_templates/404.html', {}, request=request))
+    return HttpResponseNotFound(render_to_string('static_templates/404.html', {"rendering_404": True}, request=request))
 
 
 @fix_crum_request
